@@ -12,8 +12,8 @@ const novelObj = {
 }
 
 const c = new Crawler({
-	rateLimit: 2000, // 两个任务之间的最小间隔
-	maxConnections: 2, // 最大的并发数
+	rateLimit: 200, // 两个任务之间的最小间隔
+	maxConnections: 500, // 最大的并发数
 });
 
 const dir = './book/'
@@ -89,7 +89,7 @@ if (novelConfig) {
 		})
 		const chapterHrefArr = chapterArr.map(item => item.href)
 		const titleArr = chapterArr.map(item => item.title)
-		getPageAsync(chapterHrefArr.slice(0, 10)).then((result) => {
+		getPageAsync(chapterHrefArr).then((result) => {
 			_.forEach(result, (item, index) => {
 				writeContent(item, index, chapterHrefArr[index], titleArr[index])
 			})
