@@ -9,11 +9,30 @@ module.exports = [
         },
         ChapterHome: {
             template: '/Novel/<%= data %>/Chapter.html',
-            chapterSel: '.NovelChapter .Chapter:last-child'
+            chapterSel: '.Chapter +.Chapter div'
         },
         articleHome: {
             contentSel: '#Content',
             hasNextPage: '.ChapterName strong+strong'
+        }
+    },
+    // http://m.ixiaos.com
+    // /wap.php?action=article&id=2006966
+	{
+		host: 'http://m.ixiaos.com',
+		novelHome: {
+            template: '/wap.php?action=list&id=<%= data %>',
+            titleSel: 'h2',
+            descSel: '.mod.book-intro .bd'
+        },
+        ChapterHome: {
+            template: '/wap.php?action=article&id=<%= data %>&uid=',
+            templateOfAll: 'http://www.ixiaos.com/touxiang/',
+            chapterSel: '.list_box li'
+        },
+        articleHome: {
+            contentSel: '.page-content.font-large >*:nth-child(5)',
+            hasNextPage: ''
         }
 	}
 ]

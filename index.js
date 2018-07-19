@@ -12,8 +12,8 @@ const novelObj = {
 }
 
 const c = new Crawler({
-	rateLimit: 200, // 两个任务之间的最小间隔
-	maxConnections: 500, // 最大的并发数
+	rateLimit: 20, // 两个任务之间的最小间隔
+	maxConnections: 3, // 最大的并发数
 });
 
 const dir = './book/'
@@ -22,6 +22,11 @@ const dir = './book/'
 const host = 'http://www.aishutxt.com'
 // novel id
 const novelId = 556
+
+// // 域名
+// const host = 'http://m.ixiaos.com'
+// // novel id
+// const novelId = 3185
 
 function getPageAsync(urls) {
 	return new Promise((resolve, reject) => {
@@ -67,11 +72,11 @@ if (novelConfig) {
 	const novelHomeConfig = novelConfig.novelHome
 	const chapterHomeConfig = novelConfig.ChapterHome
 
-	var compiled1 = _.template(novelHomeConfig.template);
-	var compiled2 = _.template(chapterHomeConfig.template);
-	const novelHome = host + compiled1({ data: novelId });
-	const ChapterHome = host + compiled2({ data: novelId });
-
+	var compiled1 = _.template(novelHomeConfig.template)({ data: novelId });
+	var compiled2 = _.template(chapterHomeConfig.templateOfAll || chapterHomeConfig.template)({ data: novelId })
+	let novelHome = compiled1.indexOf('http') > -1 ? compiled1 : (host + compiled1)
+	let ChapterHome = compiled2.indexOf('http') > -1 ? compiled2 : (host + compiled2)
+	console.log(novelHome, ChapterHome)
 	getPageAsync([novelHome, ChapterHome]).then((res) => {
 		const novelHomePage = res[0]
 		const ChapterHomePage = res[1]
@@ -80,24 +85,34 @@ if (novelConfig) {
 		novelObj.desc = novelHomePage(novelHomeConfig.descSel).text()
 
 		const chDom = ChapterHomePage(chapterHomeConfig.chapterSel).children()
-		const chapterArr = _.map(_.filter(chDom, el => el.name !== 'h2'), el => {
-			const href = el.firstChild.attribs.href
+		let chapterArr = _.map(chDom, (el, index) => {
+			const item = el
+			let href = item.attribs.href
+
+			if (chapterHomeConfig.templateOfAll) {
+				const id = href.match(/\d+/)
+				href = host + _.template(chapterHomeConfig.template)({ data: id })
+			}
 			return {
 				href: href.indexOf('http') > -1 ? href : (host + href),
-				title: el.firstChild.attribs.title
+				title: item.attribs.title,
+				index
 			}
 		})
-		const chapterHrefArr = chapterArr.map(item => item.href)
-		const titleArr = chapterArr.map(item => item.title)
-		getPageAsync(chapterHrefArr).then((result) => {
-			_.forEach(result, (item, index) => {
-				writeContent(item, index, chapterHrefArr[index], titleArr[index])
-			})
+		chapterArr = chapterArr.slice(-240)
+		// console.log(chapterArr)
+		getPageAsync(chapterArr.map(item => item.href)).then(async (result) => {
+			for(let i=0; i<result.length; i++) {
+				const item = result[i]
+				console.log(chapterArr[i].index, chapterArr[i].href, chapterArr[i].title)
+				await writeContent(item, chapterArr[i].index, chapterArr[i].href, chapterArr[i].title)
+			}
 		})
 	})
 }
 
-function writeContent(pageDom, index, url, title) {
+async function writeContent(pageDom, index, url, title) {
+	console.log(`fetching url:${url}`)
 	const articleHomeConfig = novelConfig.articleHome
 	const { contentSel, hasNextPage } = articleHomeConfig
 	const hasNextPageDom = pageDom(hasNextPage).text()
@@ -124,10 +139,10 @@ function writeContent(pageDom, index, url, title) {
 		// 有页码, 最后一页没有页码
 		let total = parseInt(totalStr && totalStr[0])
 
-		writeFileAsync(String(index + 1).padStart(8, '0') + '_' + num + '.html', content)
+		await writeFileAsync(String(index + 1).padStart(8, '0') + '_' + num + '.html', content)
 		writeSinglePage(pageDom, index, url, total, num + 1, contentSel)
 	} else {
-		writeFileAsync(String(index + 1).padStart(8, '0') + '_0' + '.html', content)
+		await writeFileAsync(String(index + 1).padStart(8, '0') + '_0' + '.html', content)
 	}
 }
 
@@ -143,10 +158,10 @@ function writeSinglePage(pageDom, index, url, total, num, contentSel) {
 	request.post({
 		url: url,
 		form: formObj,
-	}, function (err, httpResponse, body) {
+	}, async function (err, httpResponse, body) {
 		const $ = cheerio.load(body)
 		const content = $(contentSel).html()
-		writeFileAsync(String(index + 1).padStart(8, '0') + '_' + num + '.html', content)
+		await writeFileAsync(String(index + 1).padStart(8, '0') + '_' + num + '.html', content)
 		num++
 		if (num > total) {
 			return
