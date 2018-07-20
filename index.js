@@ -11,26 +11,28 @@ const novelObj = {
 	desc: ''
 }
 
+const maxConnections = 3
+
 const c = new Crawler({
-	rateLimit: 20, // 两个任务之间的最小间隔
-	maxConnections: 3, // 最大的并发数
+	rateLimit: 1000, // 两个任务之间的最小间隔
+	maxConnections // 最大的并发数
 });
 
 const dir = './book/'
 
 // 域名
-const host = 'http://www.aishutxt.com'
 // novel id
+const host = 'http://www.aishutxt.com'
 const novelId = 556
 
-// // 域名
+// 域名
+// novel id
 // const host = 'http://m.ixiaos.com'
-// // novel id
 // const novelId = 3185
 
 function getPageAsync(urls) {
 	return new Promise((resolve, reject) => {
-		const loop = urls.map((url) => {
+		const loop = urls.filter(item => !!item).map((url) => {
 			return new Promise((resolve, reject) => {
 				c.queue([{
 					uri: url,
@@ -77,7 +79,7 @@ if (novelConfig) {
 	let novelHome = compiled1.indexOf('http') > -1 ? compiled1 : (host + compiled1)
 	let ChapterHome = compiled2.indexOf('http') > -1 ? compiled2 : (host + compiled2)
 	console.log(novelHome, ChapterHome)
-	getPageAsync([novelHome, ChapterHome]).then((res) => {
+	getPageAsync([novelHome, ChapterHome]).then(async res => {
 		const novelHomePage = res[0]
 		const ChapterHomePage = res[1]
 
@@ -99,15 +101,22 @@ if (novelConfig) {
 				index
 			}
 		})
-		chapterArr = chapterArr.slice(-240)
 		// console.log(chapterArr)
-		getPageAsync(chapterArr.map(item => item.href)).then(async (result) => {
-			for(let i=0; i<result.length; i++) {
-				const item = result[i]
-				console.log(chapterArr[i].index, chapterArr[i].href, chapterArr[i].title)
-				await writeContent(item, chapterArr[i].index, chapterArr[i].href, chapterArr[i].title)
+		const urls = chapterArr.map(item => item.href)
+		for (let j = 0; j < urls.length;) {
+			const arr = []
+			for (let m = j; m < urls.length && m < j + maxConnections; m++) {
+				arr.push(urls[m])
 			}
-		})
+			await getPageAsync(arr).then(async (result) => {
+				for (let i = 0; i < result.length; i++) {
+					const item = result[i]
+					console.log(chapterArr[j + i].index, chapterArr[j + i].href, chapterArr[j + i].title)
+					await writeContent(item, chapterArr[j + i].index, chapterArr[j + i].href, chapterArr[j + i].title)
+				}
+			})
+			j += maxConnections
+		}
 	})
 }
 

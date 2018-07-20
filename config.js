@@ -17,7 +17,6 @@ module.exports = [
         }
     },
     // http://m.ixiaos.com
-    // /wap.php?action=article&id=2006966
 	{
 		host: 'http://m.ixiaos.com',
 		novelHome: {
