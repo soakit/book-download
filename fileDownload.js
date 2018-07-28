@@ -1,9 +1,21 @@
 const fs = require('fs')
 const path = require('path')
 const Crawler = require("crawler")
-const _ = require('lodash')
 
-const fileDownload = ({ novelHome:novelHomeConfig, ChapterHome:chapterHomeConfig, articleHome:articleHomeConfig, css }, {
+function template(strings, ...keys) {
+	return (function (...values) {
+		debugger
+		var dict = values[values.length - 1] || {};
+		var result = [strings[0]];
+		keys.forEach(function (key, i) {
+			var value = Number.isInteger(key) ? values[key] : dict[key];
+			result.push(value, strings[i + 1]);
+		});
+		return result.join('');
+	});
+}
+
+const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConfig, articleHome: articleHomeConfig, css }, {
 	maxConnections,
 	rateLimit,
 	dir,
@@ -85,20 +97,23 @@ const fileDownload = ({ novelHome:novelHomeConfig, ChapterHome:chapterHomeConfig
 				// 有页码, 最后一页没有页码
 				let total = parseInt(totalStr && totalStr[0])
 
-                await this.writeFileAsync(String(index + 1).padStart(8, '0') + '_' + num + '.html', content)
-                
-                writeSinglePage(pageDom, index, url, total, num + 1, contentSel, async (fileName, data) => {
-                    await this.writeFileAsync(fileName, data)
-                })
-                // FIXME:有可能还有其他情况
+				await this.writeFileAsync(String(index + 1).padStart(8, '0') + '_' + num + '.html', content)
+
+				writeSinglePage(pageDom, index, url, total, num + 1, contentSel, async (fileName, data) => {
+					await this.writeFileAsync(fileName, data)
+				})
+				// FIXME:有可能还有其他情况
 			} else {
 				await this.writeFileAsync(String(index + 1).padStart(8, '0') + '_0' + '.html', content)
 			}
 		},
 
 		init() {
-			var compiled1 = _.template(novelHomeConfig.template)({ data: novelId });
-			var compiled2 = _.template(chapterHomeConfig.templateOfAll || chapterHomeConfig.template)({ data: staticId || novelId })
+			const str = 'data'
+			var compiled1 = template(novelHomeConfig.template.split(str), str)({ data: novelId });
+			const t = chapterHomeConfig.templateOfAll || chapterHomeConfig.template
+			var compiled2 = template(t.split(str), str)({ data: staticId || novelId })
+			console.log(compiled1, compiled2)
 			let novelHome = compiled1.indexOf('http') > -1 ? compiled1 : (host + compiled1)
 			let ChapterHome = compiled2.indexOf('http') > -1 ? compiled2 : (host + compiled2)
 			console.log('\n书籍首页:', novelHome)
@@ -111,13 +126,13 @@ const fileDownload = ({ novelHome:novelHomeConfig, ChapterHome:chapterHomeConfig
 				novelObj.desc = novelHomePage(novelHomeConfig.descSel).text()
 
 				const chDom = ChapterHomePage(chapterHomeConfig.chapterSel).children()
-				let chapterArr = _.map(chDom, (el, index) => {
+				let chapterArr = Array.from(chDom).map((el, index) => {
 					const item = el
 					let href = item.attribs.href
 
 					if (chapterHomeConfig.templateOfAll) {
 						const id = href.match(/\d+/)
-						href = host + _.template(chapterHomeConfig.template)({ data: id })
+						href = host + template(chapterHomeConfig.template.split(str), str)({ data: id })
 					}
 					return {
 						href: href.indexOf('http') > -1 ? href : (host + href),
@@ -125,7 +140,7 @@ const fileDownload = ({ novelHome:novelHomeConfig, ChapterHome:chapterHomeConfig
 						index
 					}
 				})
-                // console.log(chapterArr)
+				// console.log(chapterArr)
 				const urls = chapterArr.map(item => item.href)
 				for (let j = 0; j < urls.length;) {
 					const arr = []

@@ -1,20 +1,18 @@
 {
   "name": "book-download",
   "version": "1.0.0",
-  "description": "",
+  "description": "book download",
   "main": "index.js",
   "scripts": {
     "epub": "node ./node_modules/html2epub/index.js --basedir=book",
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
-  "author": "",
+  "author": "soakit",
   "license": "ISC",
   "dependencies": {
     "commander": "^2.16.0",
     "crawler": "^1.1.4",
     "html2epub": "git+https://github.com/soakit/node-html2epub.git",
-    "lodash": "^4.17.10",
     "request": "^2.87.0"
   }
 }

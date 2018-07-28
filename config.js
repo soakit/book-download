@@ -35,12 +35,12 @@ module.exports = [
         host: 'http://www.aishutxt.com',
 		css: 'css/main.css', // 相对于book的子目录
 		novelHome: {
-			template: '/Novel/<%= data %>/',
+			template: `/Novel/${'data'}/`,
 			titleSel: 'h1',
 			descSel: '.NovelContent'
 		},
 		ChapterHome: {
-			template: '/Novel/<%= data %>/Chapter.html',
+			template: `/Novel/${'data'}/Chapter.html`,
 			chapterSel: '.Chapter +.Chapter div'
 		},
 		articleHome: {
@@ -54,13 +54,13 @@ module.exports = [
 	{
 		host: 'http://m.ixiaos.com',
 		novelHome: { // 书籍主页
-			template: '/wap.php?action=list&id=<%= data %>', // 书籍首页的链接
+			template: `/wap.php?action=list&id=${'data'}`, // 书籍首页的链接
 			titleSel: 'h2', // 书籍标题
 			descSel: '.mod.book-intro .bd' // 书籍描述
 		},
 		ChapterHome: { // 章节
-			template: '/wap.php?action=article&id=<%= data %>&uid=', // 章节首页的链接-->针对动态变化的
-			templateOfAll: 'http://www.ixiaos.com/<%= data %>/', // 章节页的链接-->针对静态写死的
+			template: `/wap.php?action=article&id=${'data'}&uid=`, // 章节首页的链接-->针对动态变化的
+			templateOfAll: `http://www.ixiaos.com/${'data'}/`, // 章节页的链接-->针对静态写死的
 			chapterSel: '.list_box li' // 章节
 		},
 		articleHome: { // 正文
