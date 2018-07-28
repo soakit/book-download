@@ -4,7 +4,6 @@ const Crawler = require("crawler")
 
 function template(strings, ...keys) {
 	return (function (...values) {
-		debugger
 		var dict = values[values.length - 1] || {};
 		var result = [strings[0]];
 		keys.forEach(function (key, i) {
@@ -21,7 +20,8 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 	dir,
 	host,
 	novelId,
-	staticId
+	staticId,
+	mod
 }) => {
 	const novelObj = {
 		title: '',
@@ -97,30 +97,52 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 				// 有页码, 最后一页没有页码
 				let total = parseInt(totalStr && totalStr[0])
 
-				await this.writeFileAsync(String(index + 1).padStart(8, '0') + '_' + num + '.html', content)
+				await this.writeFileAsync(
+					`${mod === 'index' ? (String(index + 1).padStart(8, '0')) : title}_${num}.html`
+					, content
+				)
 
-				writeSinglePage(pageDom, index, url, total, num + 1, contentSel, async (fileName, data) => {
-					await this.writeFileAsync(fileName, data)
+				writeSinglePage(pageDom, index, url, total, num + 1, contentSel, title, async (indexName, titleName, data) => {
+					await this.writeFileAsync(mod === 'index' ? indexName : titleName, data)
 				})
 				// FIXME:有可能还有其他情况
 			} else {
-				await this.writeFileAsync(String(index + 1).padStart(8, '0') + '_0' + '.html', content)
+				await this.writeFileAsync(
+					`${mod === 'index' ? (String(index + 1).padStart(8, '0') + '_0') : title}.html`
+					, content
+				)
 			}
 		},
 
-		init() {
+		async getAllChapters(chapterArr) {
+			const urls = chapterArr.map(item => item.href)
+			for (let j = 0; j < urls.length;) {
+				const arr = []
+				for (let m = j; m < urls.length && m < j + maxConnections; m++) {
+					arr.push(urls[m])
+				}
+				await this.getPageAsync(arr).then(async (result) => {
+					for (let i = 0; i < result.length; i++) {
+						const item = result[i]
+						console.log(chapterArr[j + i].index, chapterArr[j + i].href, chapterArr[j + i].title)
+						await this.writeContent(item, chapterArr[j + i].index, chapterArr[j + i].href, chapterArr[j + i].title)
+					}
+				})
+				j += maxConnections
+			}
+		},
+
+		getAll() {
 			const str = 'data'
 			var compiled1 = template(novelHomeConfig.template.split(str), str)({ data: novelId });
 			const t = chapterHomeConfig.templateOfAll || chapterHomeConfig.template
 			var compiled2 = template(t.split(str), str)({ data: staticId || novelId })
-			console.log(compiled1, compiled2)
 			let novelHome = compiled1.indexOf('http') > -1 ? compiled1 : (host + compiled1)
 			let ChapterHome = compiled2.indexOf('http') > -1 ? compiled2 : (host + compiled2)
 			console.log('\n书籍首页:', novelHome)
 			console.log('章节首页:', ChapterHome, '\n')
-			this.getPageAsync([novelHome, ChapterHome]).then(async res => {
-				const novelHomePage = res[0]
-				const ChapterHomePage = res[1]
+			this.getPageAsync([novelHome, ChapterHome]).then(res => {
+				const [novelHomePage, ChapterHomePage] = res
 
 				novelObj.title = novelHomePage(novelHomeConfig.titleSel).text()
 				novelObj.desc = novelHomePage(novelHomeConfig.descSel).text()
@@ -141,21 +163,7 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 					}
 				})
 				// console.log(chapterArr)
-				const urls = chapterArr.map(item => item.href)
-				for (let j = 0; j < urls.length;) {
-					const arr = []
-					for (let m = j; m < urls.length && m < j + maxConnections; m++) {
-						arr.push(urls[m])
-					}
-					await this.getPageAsync(arr).then(async (result) => {
-						for (let i = 0; i < result.length; i++) {
-							const item = result[i]
-							console.log(chapterArr[j + i].index, chapterArr[j + i].href, chapterArr[j + i].title)
-							await this.writeContent(item, chapterArr[j + i].index, chapterArr[j + i].href, chapterArr[j + i].title)
-						}
-					})
-					j += maxConnections
-				}
+				this.getAllChapters(chapterArr)
 			})
 		}
 

@@ -5,7 +5,7 @@ const cheerio = require('cheerio')
  * 自定义的写入方法
  * 用于章节中同一ID下的多页
  */
-function writeSinglePage(pageDom, index, url, total, num, contentSel, fn) {
+function writeSinglePage(pageDom, index, url, total, num, contentSel, title, fn) {
     const formObj = {
         __EVENTTARGET: 'Page_' + num,
         __EVENTARGUMENT: pageDom('#__EVENTARGUMENT').val(),
@@ -19,13 +19,15 @@ function writeSinglePage(pageDom, index, url, total, num, contentSel, fn) {
         form: formObj,
     }, async function (err, httpResponse, body) {
         const $ = cheerio.load(body)
-        const content = $(contentSel).html()
-        await fn(String(index + 1).padStart(8, '0') + '_' + num + '.html', content)
+		const content = $(contentSel).html()
+		const indexFileName = `${String(index + 1).padStart(8, '0')}_${num}.html`
+		const titleFileName = `${title}_${num}.html`
+        await fn(indexFileName, titleFileName, content)
         num++
         if (num > total) {
             return
         }
-        writeSinglePage($, index, url, total, num, contentSel, fn)
+        writeSinglePage($, index, url, total, num, contentSel, title, fn)
     })
 }
 

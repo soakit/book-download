@@ -12,12 +12,13 @@
     -c, --maxConnections <n>    最大的并发数
     -l, --rateLimit <n>         两个任务之间的最小间隔
     -d, --dir [value]           书籍存放目录
+    -m, --mod [value]           文件名命名方式(index: 以索引为文件名, title: 以标题为文件名)
 ```
 3. `npm run epub`
 
 ### Test Command
->node index.js -o ixiaos -n 3185 -s touxiang -c 3 -l 1000 -d ./book/
+>node index.js -o ixiaos -n 3185 -s touxiang -c 3 -l 1000 -d ./book/ -m title
 
 or
 
-> node index.js -o aishutxt -n 556 -c 3 -l 1000 -d ./book/
+> node index.js -o aishutxt -n 556 -c 3 -l 1000 -d ./book/ -m index
