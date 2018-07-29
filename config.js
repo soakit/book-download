@@ -43,7 +43,7 @@ module.exports = [
 		},
 		ChapterHome: {
 			template: `/Novel/${'data'}/Chapter.html`,
-			chapterSel: '.Chapter +.Chapter div'
+			chapterSel: '.Chapter +.Chapter div a'
 		},
 		articleHome: {
 			contentSel: '#Content',
@@ -63,11 +63,29 @@ module.exports = [
 		ChapterHome: { // 章节
 			template: `/wap.php?action=article&id=${'data'}&uid=`, // 章节首页的链接-->针对动态变化的
 			templateOfAll: `http://www.ixiaos.com/${'data'}/`, // 章节页的链接-->针对静态写死的
-			chapterSel: '.list_box li' // 章节
+			chapterSel: '.list_box li a' // 章节
 		},
 		articleHome: { // 正文
 			contentSel: '.page-content.font-large >*:nth-child(5)', // 内容区域
 			hasNextPage: '' // 下页内容
 		}
-	}
+	},
+	// https://www.jianshu.com/
+	{
+		host: 'https://www.jianshu.com',
+		css: 'css/entry.css', // 相对于book的子目录
+		novelHome: { // 书籍主页
+			template: `/nb/${'data'}`, // 书籍首页的链接
+			titleSel: '.main-top .title .name', // 书籍标题
+			descSel: '.main-top .info' // 书籍描述
+		},
+		ChapterHome: { // 章节
+			template: `/nb/${'data'}`,
+			chapterSel: '.note-list .title' // 章节
+		},
+		articleHome: { // 正文
+			contentSel: '.article .show-content', // 内容区域
+			hasNextPage: '' // 下页内容
+		}
+	},
 ]

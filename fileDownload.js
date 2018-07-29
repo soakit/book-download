@@ -142,15 +142,16 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 			console.log('\n书籍首页:', novelHome)
 			console.log('章节首页:', ChapterHome, '\n')
 			this.getPageAsync([novelHome, ChapterHome]).then(res => {
-				const [novelHomePage, ChapterHomePage] = res
+				const [novelHomePage, $] = res
 
 				novelObj.title = novelHomePage(novelHomeConfig.titleSel).text()
 				novelObj.desc = novelHomePage(novelHomeConfig.descSel).text()
 
-				const chDom = ChapterHomePage(chapterHomeConfig.chapterSel).children()
-				let chapterArr = Array.from(chDom).map((el, index) => {
-					const item = el
-					let href = item.attribs.href
+				const chDom = $(chapterHomeConfig.chapterSel)
+				
+				let chapterArr = Array.from(chDom).map(function(el, index) {
+					const item = $(el)
+					let href = item.attr('href')
 
 					if (chapterHomeConfig.templateOfAll) {
 						const id = href.match(/\d+/)
@@ -158,7 +159,7 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 					}
 					return {
 						href: href.indexOf('http') > -1 ? href : (host + href),
-						title: item.attribs.title,
+						title: item.text(),
 						index
 					}
 				})
