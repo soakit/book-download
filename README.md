@@ -22,3 +22,7 @@
 or
 
 > node index.js -o aishutxt -n 556 -c 3 -l 1000 -d ./book/ -m index
+
+or
+
+> node index.js -o jianshu -n 9185393 -c 3 -l 1000 -d ./book/ -m title

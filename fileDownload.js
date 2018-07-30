@@ -14,7 +14,7 @@ function template(strings, ...keys) {
 	});
 }
 
-const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConfig, articleHome: articleHomeConfig, css }, {
+const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConfig, articleHome: articleHomeConfig, css, contentClassName=[] }, {
 	maxConnections,
 	rateLimit,
 	dir,
@@ -33,6 +33,9 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 	});
 	return {
 		getPageAsync(urls) {
+			if (typeof urls === 'string') {
+				urls = [urls]
+			}
 			return new Promise((resolve, reject) => {
 				const loop = urls.filter(item => !!item).map((url) => {
 					return new Promise((resolve, reject) => {
@@ -75,6 +78,21 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 			const { contentSel, hasNextPage, totalReg, writeSinglePage } = articleHomeConfig
 			const hasNextPageDom = pageDom(hasNextPage).text()
 			let content = pageDom(contentSel).html()
+			// 主体内容
+			const mainContent = `<h1>${title}</h1>
+								<br><br>
+								${content}`
+			// 包裹层								
+			let wrapContent = ''
+			contentClassName.forEach((item, index) => {
+				wrapContent += `<div class=${item}>`
+				if (index === contentClassName.length -1) {
+					wrapContent += mainContent
+				}
+			})
+			contentClassName.forEach(item => {
+				wrapContent += `</div>`
+			})
 			content = `
                         <html>
                         <head>
@@ -83,9 +101,7 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
                             <title>${novelObj.title}</title>
                         </head>
                             <body>
-                                <h1>${title}</h1>
-                                <br><br>
-                                ${content}
+                                ${contentClassName.length ? wrapContent : mainContent}
                             </body>
                         </html>
                     `
@@ -98,8 +114,7 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 				let total = parseInt(totalStr && totalStr[0])
 
 				await this.writeFileAsync(
-					`${mod === 'index' ? (String(index + 1).padStart(8, '0')) : title}_${num}.html`
-					, content
+					`${mod === 'index' ? (String(index + 1).padStart(8, '0')) : title}_${num}.html`, content
 				)
 
 				writeSinglePage(pageDom, index, url, total, num + 1, contentSel, title, async (indexName, titleName, data) => {
@@ -108,8 +123,7 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 				// FIXME:有可能还有其他情况
 			} else {
 				await this.writeFileAsync(
-					`${mod === 'index' ? (String(index + 1).padStart(8, '0') + '_0') : title}.html`
-					, content
+					`${mod === 'index' ? (String(index + 1).padStart(8, '0') + '_0') : title}.html`, content
 				)
 			}
 		},
@@ -139,8 +153,21 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 			var compiled2 = template(t.split(str), str)({ data: staticId || novelId })
 			let novelHome = compiled1.indexOf('http') > -1 ? compiled1 : (host + compiled1)
 			let ChapterHome = compiled2.indexOf('http') > -1 ? compiled2 : (host + compiled2)
+
 			console.log('\n书籍首页:', novelHome)
 			console.log('章节首页:', ChapterHome, '\n')
+
+			const { getArticleUrls } = chapterHomeConfig
+			if (getArticleUrls) {
+				this.getPageAsync(ChapterHome).then(async res => {
+					const [$] = res
+					const chapterArr = await getArticleUrls($, 1, [], this.getPageAsync)
+					// console.log(chapterArr)
+					this.getAllChapters(chapterArr)
+				})
+				return
+			}
+
 			this.getPageAsync([novelHome, ChapterHome]).then(res => {
 				const [novelHomePage, $] = res
 
@@ -148,8 +175,8 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 				novelObj.desc = novelHomePage(novelHomeConfig.descSel).text()
 
 				const chDom = $(chapterHomeConfig.chapterSel)
-				
-				let chapterArr = Array.from(chDom).map(function(el, index) {
+
+				let chapterArr = Array.from(chDom).map(function (el, index) {
 					const item = $(el)
 					let href = item.attr('href')
 
