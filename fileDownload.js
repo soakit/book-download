@@ -14,7 +14,7 @@ function template(strings, ...keys) {
 	});
 }
 
-const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConfig, articleHome: articleHomeConfig, css, contentClassName=[] }, {
+const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConfig, articleHome: articleHomeConfig, css, contentClassName = [], replacers = [] }, {
 	maxConnections,
 	rateLimit,
 	dir,
@@ -78,6 +78,12 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 			const { contentSel, hasNextPage, totalReg, writeSinglePage } = articleHomeConfig
 			const hasNextPageDom = pageDom(hasNextPage).text()
 			let content = pageDom(contentSel).html()
+			// 替换器
+			replacers.forEach(item => {
+				const { repReg, repStr } = item
+				content = content.replace(repReg, repStr)
+			})
+
 			// 主体内容
 			const mainContent = `<h1>${title}</h1>
 								<br><br>
@@ -86,7 +92,7 @@ const fileDownload = ({ novelHome: novelHomeConfig, ChapterHome: chapterHomeConf
 			let wrapContent = ''
 			contentClassName.forEach((item, index) => {
 				wrapContent += `<div class=${item}>`
-				if (index === contentClassName.length -1) {
+				if (index === contentClassName.length - 1) {
 					wrapContent += mainContent
 				}
 			})

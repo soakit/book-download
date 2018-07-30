@@ -112,6 +112,13 @@ module.exports = [
 		host: 'https://www.jianshu.com',
 		css: 'css/entry.css', // 相对于book的子目录
 		contentClassName: ['note', 'post', 'article', 'show-content'],
+		replacers: [{
+			// TODO:把图片下载到本地
+			// repReg: /data-original-src/g,
+			// repStr: 'src'
+			repReg: /data-original-src=\"\/\//g,
+			repStr: 'src="https://'
+		}],
 		novelHome: { // 书籍主页
 			template: `/nb/${'data'}`, // 书籍首页的链接
 			titleSel: '.main-top .title .name', // 书籍标题
